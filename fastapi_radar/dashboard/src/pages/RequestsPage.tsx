@@ -22,7 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SearchInput } from "@/components/ui/search-input";
 import { RequestItem } from "@/components/RequestItem";
 import { useDebounce } from "@/hooks/useDebounce";
-import { Filter, Download, RefreshCw } from "lucide-react";
+import { Filter, FileSpreadsheet, FileText, RefreshCw } from "lucide-react";
 import { useDetailDrawer } from "@/context/DetailDrawerContext";
 import { useT } from "@/i18n";
 
@@ -103,16 +103,64 @@ export function RequestsPage() {
     refetch();
   };
 
+  const downloadExport = (content: string, mimeType: string, extension: string) => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+
+    link.href = url;
+    link.download = `requests-${timestamp}.${extension}`;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  };
+
   const exportData = () => {
-    if (filteredRequests) {
-      const data = JSON.stringify(filteredRequests, null, 2);
-      const blob = new Blob([data], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `requests-${new Date().toISOString()}.json`;
-      a.click();
-    }
+    if (!filteredRequests?.length) return;
+
+    downloadExport(
+      JSON.stringify(filteredRequests, null, 2),
+      "application/json",
+      "json"
+    );
+  };
+
+  const exportCsv = () => {
+    if (!filteredRequests?.length) return;
+
+    const columns = [
+      "request_id",
+      "method",
+      "path",
+      "status_code",
+      "duration_ms",
+      "query_count",
+      "has_exception",
+      "created_at",
+    ];
+
+    const escapeCsvValue = (value: unknown) => {
+      const text = value === null || value === undefined ? "" : String(value);
+      return `"${text.replace(/"/g, '""')}"`;
+    };
+
+    const rows = filteredRequests.map((request) => [
+      request.request_id,
+      request.method,
+      request.path,
+      request.status_code,
+      request.duration_ms,
+      request.query_count,
+      request.has_exception,
+      request.created_at,
+    ]);
+
+    const csv = [columns, ...rows]
+      .map((row) => row.map(escapeCsvValue).join(","))
+      .join("\r\n");
+
+    // Include a UTF-8 BOM so spreadsheet applications display non-ASCII paths correctly.
+    downloadExport(`\uFEFF${csv}`, "text/csv;charset=utf-8", "csv");
   };
 
   return (
@@ -184,8 +232,25 @@ export function RequestsPage() {
                   <Button variant="outline" size="icon" onClick={() => refetch()}>
                     <RefreshCw className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" size="icon" onClick={exportData}>
-                    <Download className="h-4 w-4" />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={exportData}
+                    disabled={!filteredRequests?.length}
+                    aria-label={t('common.exportJson')}
+                    title={t('common.exportJson')}
+                  >
+                    <FileText className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={exportCsv}
+                    disabled={!filteredRequests?.length}
+                    aria-label={t('common.exportCsv')}
+                    title={t('common.exportCsv')}
+                  >
+                    <FileSpreadsheet className="h-4 w-4" />
                   </Button>
                   <Button onClick={applyFilters}>
                     <Filter className="mr-2 h-4 w-4" />

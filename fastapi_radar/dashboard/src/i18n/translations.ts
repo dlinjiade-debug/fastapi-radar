@@ -97,6 +97,8 @@ export interface Translations {
     search: string;
     filter: string;
     export: string;
+    exportJson: string;
+    exportCsv: string;
     import: string;
     close: string;
     open: string;
@@ -531,6 +533,8 @@ const en: Translations = {
     search: "Search",
     filter: "Filter",
     export: "Export",
+    exportJson: "Export JSON",
+    exportCsv: "Export CSV",
     import: "Import",
     close: "Close",
     open: "Open",
@@ -957,6 +961,8 @@ const zh: Translations = {
     search: "搜索",
     filter: "筛选",
     export: "导出",
+    exportJson: "导出 JSON",
+    exportCsv: "导出 CSV",
     import: "导入",
     close: "关闭",
     open: "打开",
